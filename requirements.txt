@@ -1,0 +1,13 @@
+# 1. 核心底座 (LLaMA-Factory)
+# 安装这个会附带安装 torch, transformers, peft, accelerate 等所有重型依赖
+# [metrics] 是可选的，用于安装评估所需的 rouge/jieba 等库
+-e ./LLaMA-Factory[metrics]
+
+# 2. 评估工具 (lm-evaluation-harness)
+# 之前在 batch_eval.py 里用到了它
+-e ./LLaMA-Factory/lm-evaluation-harness
+
+# 3. 扩展模块 (Stella)
+# 这是你特有的依赖。因为它本身依赖 transformers，
+# 把它放在后面，它会复用 LLaMA-Factory 已经装好的环境，只补充它缺少的包
+-e ./stella

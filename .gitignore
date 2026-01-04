@@ -7,7 +7,7 @@ saves/
 # 忽略数据
 data/
 dataset/
-
+model/
 # 忽略 Python 缓存
 __pycache__/
 *.pyc

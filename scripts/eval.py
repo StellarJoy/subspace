@@ -24,13 +24,13 @@ TASKS = "piqa,boolq,arc_easy"
 # 我根据之前帮你改的脚本，填好了这三个路径，你可以根据实际跑出来的情况调整
 MODELS_TO_TEST = {
     # LLaMA-Factory 的结果 (之前改名为 llama3-8b-dora-sft)
-    "DoRA_Factory": os.path.join(PROJECT_ROOT, "outputs/llama3-8b-dora-sft"),
+    "LoRA_Factory": os.path.join(PROJECT_ROOT, "outputs/lora_rank8"),
 
     # Fira 的结果 (之前脚本里设定的)
-    "Fira_LoRA":    os.path.join(PROJECT_ROOT, "outputs/fira_llama3_8b"),
+    #"Fira_LoRA":    os.path.join(PROJECT_ROOT, "outputs/fira_llama3_8b"),
 
     # Stella 的结果 (之前脚本里设定的)
-    "Stella_H800":  os.path.join(PROJECT_ROOT, "outputs/llama3_stella_h800_speed_run"),
+    #"Stella_H800":  os.path.join(PROJECT_ROOT, "outputs/llama3_stella_h800_speed_run"),
 }
 
 # [评估结果保存位置]
@@ -50,7 +50,7 @@ def run_eval():
     os.makedirs(EVAL_OUTPUT_DIR, exist_ok=True)
 
     # 设置环境变量 (如果需要)
-    os.environ["HF_TOKEN"] = "你的Token" # 如果服务器已有环境无需重复设置
+    os.environ["HF_TOKEN"] = "" # 如果服务器已有环境无需重复设置
     os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
     for algo_name, model_path in MODELS_TO_TEST.items():
