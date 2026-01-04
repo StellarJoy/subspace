@@ -9,7 +9,8 @@
 
 import os
 import sys
-
+import json
+import time
 import fire
 import torch
 import transformers
@@ -20,10 +21,11 @@ from peft import (
     prepare_model_for_kbit_training,
     set_peft_model_state_dict,
 )
-from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, TrainerCallback
 
 from stella import StellaConfig, StellaTrainer
 
+from utils.unified_logger import UnifiedLoggerCallback
 
 def train(
     # model/data params
@@ -45,6 +47,7 @@ def train(
     use_gradient_checkpointing: bool = False,
     eval_step: int = 200,
     save_step: int = 200,
+    max_train_samples: int = -1,
     # lora hyperparams
     bf16: bool = True,
     fp16: bool = False,
@@ -177,7 +180,7 @@ def train(
             ]  # could be sped up, probably
         return tokenized_full_prompt
 
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=use_gradient_checkpointing)
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=use_gradient_checkpointing)
     if adapter_name.lower() == 'lora':
         config = LoraConfig(
             r=lora_r,
@@ -249,12 +252,23 @@ def train(
 
     model.print_trainable_parameters()  # Be more transparent about the % of trainable params.
 
+    raw_dataset = data['train'].shuffle(seed=42)
+
+    # 2. 【先切片】只取前 10000 条 (Max Samples)
+    # 这样能保证你总共只用了 10k 数据，和 LoRA 一致
+    if max_train_samples > 0:
+        print(f"✂️  Slicing dataset to {max_train_samples} samples...")
+        num_samples = min(len(raw_dataset), max_train_samples)
+        raw_dataset = raw_dataset.select(range(num_samples))
+
+    # 3. 【后划分】9:1 分割 (Train / Val)
+    # 这里的 val_set_size 如果是 1000，那就是 9000 训练，1000 验证
     if val_set_size > 0:
-        train_val = data['train'].train_test_split(test_size=val_set_size, shuffle=True, seed=42)
-        train_data = train_val['train'].shuffle().map(generate_and_tokenize_prompt)
-        val_data = train_val['test'].shuffle().map(generate_and_tokenize_prompt)
+        split_dataset = raw_dataset.train_test_split(test_size=val_set_size, shuffle=True, seed=42)
+        train_data = split_dataset['train'].map(generate_and_tokenize_prompt)
+        val_data = split_dataset['test'].map(generate_and_tokenize_prompt)
     else:
-        train_data = data['train'].shuffle().map(generate_and_tokenize_prompt)
+        train_data = raw_dataset.map(generate_and_tokenize_prompt)
         val_data = None
 
     if not ddp and torch.cuda.device_count() > 1:
@@ -263,6 +277,9 @@ def train(
         model.model_parallel = True
 
     trainer_cls = transformers.Trainer if adapter_name.lower() != 'stella' else StellaTrainer
+
+    unified_log_path = os.path.join(output_dir, "unified_log.jsonl")
+
     trainer = trainer_cls(
         model=model,
         train_dataset=train_data,
@@ -277,7 +294,7 @@ def train(
             lr_scheduler_type=lr_scheduler_type,
             bf16=bf16,
             fp16=fp16,
-            logging_steps=10,
+            logging_steps=1,
             optim='adamw_torch' if optimizer == 'adamw' else optimizer,
             eval_strategy='steps' if val_set_size > 0 else 'no',
             save_strategy='steps',
@@ -295,6 +312,7 @@ def train(
             weight_decay=weight_decay,
             momentum=sgd_momentum
         )) if optimizer == 'sgd' else None,
+        callbacks=[UnifiedLoggerCallback(unified_log_path, "Stella")],
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors='pt', padding=True
         ),

@@ -1,0 +1,40 @@
+### 模型配置
+model_name_or_path: /root/autodl-tmp/subspace/models/LLM-Research/Meta-Llama-3-8B-Instruct
+trust_remote_code: true
+
+### 方法配置 (GaLore)
+stage: sft
+do_train: true
+finetuning_type: full        # <--- [注意] GaLore 本质是全量微调，这里必须填 full
+use_galore: true             # <--- 开启 GaLore
+galore_layerwise: true       # <--- [核心] 开启逐层更新，极大降低显存
+galore_target: all
+galore_rank: 128
+galore_scale: 2.0
+
+### 数据配置
+dataset: commonsense_170k
+template: llama3
+cutoff_len: 1024
+max_samples: 10000
+overwrite_cache: true
+preprocessing_num_workers: 16
+
+### 输出配置
+output_dir: saves/llama3-8b/galore/sft
+logging_steps: 1
+save_steps: 10000            # 不存中间文件
+plot_loss: true
+overwrite_output_dir: true
+report_to: none
+
+### 训练参数 (严格控制变量)
+optim: adamw_torch
+per_device_train_batch_size: 8   # <--- [关键] 设为8，用于和下面的 LoRA 做公平对比
+gradient_accumulation_steps: 1   # <--- [限制] Layerwise 模式通常要求累积步数为 1
+learning_rate: 2.0e-5            # <--- [关键] 全量微调 LR 要小 (LoRA通常是 1e-4)
+num_train_epochs: 3.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+pure_bf16: true                  # H800 开启纯 bf16 节省显存
+flash_attn: sdpa

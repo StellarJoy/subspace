@@ -306,7 +306,7 @@ class StellaModel(BaseTuner):
                 warnings.warn(msg)
         self._set_adapter_layers(enabled=False)
 
-    def set_adapter(self, adapter_name: str | list[str]) -> None:
+    def set_adapter(self, adapter_name: str | list[str], inference_mode: bool = False, **kwargs) -> None:
         """Set the active adapter(s).
 
         Additionally, this function will set the specified adapters to trainable (i.e., requires_grad=True). If this is

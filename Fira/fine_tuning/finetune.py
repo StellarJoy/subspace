@@ -14,7 +14,10 @@ Unused imports:
 import torch.nn as nn
 import bitsandbytes as bnb
 """
-sys.path.insert(0, os.path.join(os.getcwd(), "peft/src/"))
+# 获取 finetune.py 所在的真实目录 (即 Fira/fine_tuning)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# 拼接出绝对路径并加入系统路径
+sys.path.insert(0, os.path.join(script_dir, "peft/src"))
 
 import peft
 if not hasattr(peft, "PeftMixedModel"):
@@ -34,6 +37,12 @@ from peft import (  # noqa: E402
 
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, AutoModel  # noqa: F402
+
+import json
+import time
+from transformers import TrainerCallback
+
+from utils.unified_logger import UnifiedLoggerCallback
 
 def train(
         # model/data params
@@ -210,41 +219,68 @@ def train(
                                                                     ]  # could be sped up, probably
         return tokenized_full_prompt
 
-    model = prepare_model_for_int8_training(model, use_gradient_checkpointing=use_gradient_checkpointing)
-    if adapter_name == "lora":
-        config = LoraConfig(
-            r=lora_r,
-            lora_alpha=lora_alpha,
-            target_modules=target_modules,
-            lora_dropout=lora_dropout,
-            bias="none",
-            task_type="CAUSAL_LM",
-        )
-    elif adapter_name == "bottleneck":
-        config = BottleneckConfig(
-            bottleneck_size=bottleneck_size,
-            non_linearity=non_linearity,
-            adapter_dropout=adapter_dropout,
-            use_parallel_adapter=use_parallel_adapter,
-            use_adapterp=use_adapterp,
-            target_modules=target_modules,
-            scaling=scaling,
-            bias="none",
-            task_type="CAUSAL_LM",
-        )
-    elif adapter_name == "prefix-tuning":
-        config = PrefixTuningConfig(
-            num_virtual_tokens=num_virtual_tokens,
-            task_type="CAUSAL_LM",
-        )
-    model = get_peft_model(model, config)
-    if adapter_name == "prefix-tuning":
-        model.to('cuda')
+    if adapter_name == "full":
+        print("Running Full-rank training (skipping PEFT setup)...")
+        # 全量模式下，不需要 prepare_model_for_int8_training (它主要用于 int8 或 冻结参数)
+        # 我们只需要手动开启梯度检查点（如果需要省显存）
+        if use_gradient_checkpointing:
+            model.gradient_checkpointing_enable()
+            # 开启梯度检查点时，必须让输入层 requires_grad，否则反向传播会报错
+            if hasattr(model, "enable_input_require_grads"):
+                model.enable_input_require_grads()
+            else:
+                def make_inputs_require_grad(module, input, output):
+                    output.requires_grad_(True)
+                model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
+                
+    else:
+        # === 原有的 PEFT 逻辑 (保持不变，缩进一层) ===
+        model = prepare_model_for_int8_training(model, use_gradient_checkpointing=use_gradient_checkpointing)
+        
+        config = None
+        if adapter_name == "lora":
+            config = LoraConfig(
+                r=lora_r,
+                lora_alpha=lora_alpha,
+                target_modules=target_modules,
+                lora_dropout=lora_dropout,
+                bias="none",
+                task_type="CAUSAL_LM",
+            )
+        elif adapter_name == "bottleneck":
+            config = BottleneckConfig(
+                bottleneck_size=bottleneck_size,
+                non_linearity=non_linearity,
+                adapter_dropout=adapter_dropout,
+                use_parallel_adapter=use_parallel_adapter,
+                use_adapterp=use_adapterp,
+                target_modules=target_modules,
+                scaling=scaling,
+                bias="none",
+                task_type="CAUSAL_LM",
+            )
+        elif adapter_name == "prefix-tuning":
+            config = PrefixTuningConfig(
+                num_virtual_tokens=num_virtual_tokens,
+                task_type="CAUSAL_LM",
+            )
+            
+        # 只有在 config 存在时才调用 get_peft_model
+        if config:
+            model = get_peft_model(model, config)
+            if adapter_name == "prefix-tuning":
+                model.to('cuda')
 
     if data_path.endswith(".json"):  # todo: support jsonl
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
+
+    TOTAL_DATA_SIZE = 10000
+    if len(data["train"]) > TOTAL_DATA_SIZE:
+        print(f"Truncating dataset from {len(data['train'])} to {TOTAL_DATA_SIZE} samples.")
+        # select 类似于切片，取前 10000 条
+        data["train"] = data["train"].select(range(TOTAL_DATA_SIZE))
 
     if resume_from_checkpoint:
         # Check the available weights and load them
@@ -288,13 +324,20 @@ def train(
         model.model_parallel = True
 
     import sys
-    sys.path.append("..")
-    from optimizer_torch import FiraAdamW, GaLoreAdamW    
+    # 1. 获取 finetune.py 所在的目录 (.../Fira/fine_tuning)
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    # 2. 获取 Fira 根目录 (.../Fira)
+    fira_root_dir = os.path.dirname(current_file_dir)
+    # 3. 强行把 Fira 根目录加入搜索路径
+    if fira_root_dir not in sys.path:
+        sys.path.insert(0, fira_root_dir)
+
+    from optimizer_torch import FiraAdamW, GaLoreAdamW  
 
     if any(word in optimizer_name.lower() for word in ['fira', 'galore']):
         # make parameters with "rank" to a single group, if param_name has "mlp" or "attn"
         gradient_projection_params = []
-        target_modules_list = ["q_proj", "k_proj", "v_proj", "up_proj", "down_proj"]
+        target_modules_list = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
         for module_name, module in model.named_modules():
             if not isinstance(module, nn.Linear):
                 continue
@@ -322,12 +365,14 @@ def train(
     elif optimizer_name.lower() == "galore_adamw":
         optimizer = GaLoreAdamW(param_groups, lr=learning_rate)
 
+    unified_log_path = os.path.join(output_dir, "unified_log.jsonl")
 
     trainer = transformers.Trainer(
         model=model,
         train_dataset=train_data,
         eval_dataset=val_data,
         optimizers=(optimizer, None),
+        callbacks=[UnifiedLoggerCallback(unified_log_path, "Fira")],
         args=transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
@@ -335,7 +380,7 @@ def train(
             num_train_epochs=num_epochs,
             learning_rate=learning_rate,
             fp16=True,
-            logging_steps=10,
+            logging_steps=1,
             eval_strategy="steps" if val_set_size > 0 else "no",
             save_strategy="steps",
             eval_steps=eval_step if val_set_size > 0 else None,

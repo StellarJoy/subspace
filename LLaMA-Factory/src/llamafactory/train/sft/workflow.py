@@ -28,6 +28,11 @@ from ..trainer_utils import create_modelcard_and_push
 from .metric import ComputeAccuracy, ComputeSimilarity, eval_logit_processor
 from .trainer import CustomSeq2SeqTrainer
 
+import sys
+import os
+# 假设 unified_logger.py 在根目录，需要把根目录加入 path (如果报错找不到模块)
+sys.path.append(os.getcwd()) 
+from utils.unified_logger import UnifiedLoggerCallback
 
 if TYPE_CHECKING:
     from transformers import Seq2SeqTrainingArguments, TrainerCallback
@@ -117,12 +122,32 @@ def run_sft(
         model.config.use_cache = False
 
     else:
+        experiment_name = finetuning_args.finetuning_type.upper()
+    
+        # 如果开启了 DoRA
+        if getattr(finetuning_args, "use_dora", False):
+            experiment_name = "DoRA"
+        elif getattr(finetuning_args, "pissa_init", False):
+            experiment_name = "pissa"    
+        # 如果开启了 RSLoRA
+        elif getattr(finetuning_args, "use_rslora", False):
+            experiment_name = "RSLoRA"
+        # 如果开启了 GaLore (通常在 optimizer 或 model_args 里，或者是 full 微调的一种优化)
+        # 注意：具体变量名取决于你用的版本，这里是一个通用检测逻辑
+        elif "galore" in training_args.optim.lower():
+            experiment_name = "GaLore"
+
+        # [修改] 2. 定义日志路径 & 初始化 Callback
+        # 这样日志里就会显示 "LoRA", "DoRA" 或 "GaLore" 了
+        unified_log_path = os.path.join(training_args.output_dir, "unified_log.jsonl")
+        my_callback = UnifiedLoggerCallback(log_file_path=unified_log_path, method_name=experiment_name)
+
         trainer = CustomSeq2SeqTrainer(
             model=model,
             args=training_args,
             finetuning_args=finetuning_args,
             data_collator=data_collator,
-            callbacks=callbacks,
+            callbacks=[my_callback],
             gen_kwargs=gen_kwargs,
             **dataset_module,
             **tokenizer_module,
