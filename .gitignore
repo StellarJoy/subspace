@@ -5,9 +5,9 @@ checkpoints/
 result/
 saves/
 # 忽略数据
-data/
+data/commonsense170k/
 dataset/
-model/
+models/
 # 忽略 Python 缓存
 __pycache__/
 *.pyc
