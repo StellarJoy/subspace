@@ -99,7 +99,7 @@ Bash
 
 ```bash
 # 脚本会自动扫描 outputs 目录下的模型并调用 lm-eval
-python scripts/batch_eval.py
+python scripts/eval.py
 ```
 
 结果将保存在 `eval_results/` 目录下。

@@ -5,13 +5,10 @@ set -o xtrace
 # ==================== 1. 魔法前缀 (自动定位工程目录) ====================
 # 获取当前脚本所在的目录 (即 subspace/scripts)
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-
 # 获取项目根目录 (即 subspace/)
 PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
-
 # "瞬移"到根目录执行，确保所有相对路径都从 subspace/ 开始
 cd "$PROJECT_ROOT"
-
 # 同时加入 "项目根目录" (为了找 utils) 和 "stella 仓库目录" (为了找 stella 包)
 export PYTHONPATH="$PROJECT_ROOT/stella:$PROJECT_ROOT:$PYTHONPATH"
 
@@ -19,8 +16,7 @@ echo "📍 当前工作目录: $(pwd)"
 
 # ==================== 2. 参数配置 ====================
 
-# [路径设置] - 全部修改为基于 $PROJECT_ROOT 的相对路径
-# 这样即使你把 subspace 文件夹移动到任何地方，或者换了电脑，都能跑
+# [路径设置] 
 MODEL_PATH="$PROJECT_ROOT/models/LLM-Research/Meta-Llama-3-8B-Instruct"
 DATA_PATH="$PROJECT_ROOT/data/MetaMathQA/train.json"
 OUTPUT_DIR="$PROJECT_ROOT/outputs/stella"
