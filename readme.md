@@ -16,7 +16,7 @@
 
 | 算法       | 来源                                                         | 说明                         | 运行方式                     |
 | :--------- | :----------------------------------------------------------- | :--------------------------- | :--------------------------- |
-| **LoRA **  | LLaMA-Factory                                                | 基座框架自带的主流 PEFT 方法 | `bash scripts/run_lora.sh`   |
+| **LoRA**  | LLaMA-Factory                                                | 基座框架自带的主流 PEFT 方法 | `bash scripts/run_lora.sh`   |
 | **DoRA**   | LLaMA-Factory                                                | 基座框架自带的主流 PEFT 方法 | `bash scripts/run_dora.sh`   |
 | **GaLore** | LLaMA-Factory                                                | 基座框架自带的主流 PEFT 方法 | `bash scripts/run_galore.sh` |
 | **pissa**  | LLaMA-Factory                                                | 基座框架自带的主流 PEFT 方法 | `bash scripts/run_pissa.sh`  |
