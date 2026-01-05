@@ -37,7 +37,7 @@ subspace/
 │   ├── run_fira.sh        # 运行 Fira 算法
 │   ├── run_stella.sh      # 运行 Stella 算法
 │   └── batch_eval.py      # 批量评测脚本
-│   └── plot_loss.py       # 绘制损失曲线脚本
+│   └── loss_plot.py       # 绘制损失曲线脚本
 ├── outputs/               # [输出] 所有的 Checkpoints 和 Logs 统一存放在此
 ├── data/                  # [数据] 数据集与 dataset_info.json,模型下载脚本
 ├── models/                # [模型] 基座模型 (Git ignored)
