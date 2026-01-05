@@ -38,7 +38,7 @@ report_to: none
 
 ### 训练参数 (H800 加速版)
 per_device_train_batch_size: 16
-gradient_accumulation_steps: 4
+gradient_accumulation_steps: 1
 # [修改6] LR 从 2e-4 改为 1e-4 (Fira 论文微调标准 LR)
 learning_rate: 1.0e-4
 # [修改7] Epochs 从 5.0 改为 3.0 (Fira 论文设置)

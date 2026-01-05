@@ -168,16 +168,34 @@ def train(
             return result
 
     def generate_and_tokenize_prompt(data_point):
+        # 1. 生成完整的 Prompt (包含问题 + 答案)
         full_prompt = generate_prompt(data_point)
         tokenized_full_prompt = tokenize(full_prompt)
-        if not train_on_inputs:
-            user_prompt = generate_prompt({**data_point, 'output': ''})
-            tokenized_user_prompt = tokenize(user_prompt, add_eos_token=False)
-            user_prompt_len = len(tokenized_user_prompt['input_ids'])
 
-            tokenized_full_prompt['labels'] = [-100] * user_prompt_len + tokenized_full_prompt['labels'][
+        # 2. 如果开启了“不训练输入”（只训练回答），则进入 Mask 逻辑
+        if not train_on_inputs:
+            # === 关键修改：创建一个副本，彻底清空答案 ===
+            user_data_point = data_point.copy()
+            
+            # 【核心修复点】同时清空两种格式的答案字段
+            user_data_point["output"] = ""     # 针对 Alpaca/Standard 格式
+            user_data_point["response"] = ""   # 针对 MetaMathQA 格式 <--- 必须加这一行！
+            
+            # 再次生成，此时得到的才是真正的“纯问题”Prompt
+            user_prompt = generate_prompt(user_data_point)
+            # ==========================================
+
+            # 计算纯问题的长度
+            tokenized_user_prompt = tokenize(user_prompt, add_eos_token=False)
+            user_prompt_len = len(tokenized_user_prompt["input_ids"])
+
+            # 执行 Mask：把纯问题部分的 Label 设为 -100
+            tokenized_full_prompt["labels"] = [
+                -100
+            ] * user_prompt_len + tokenized_full_prompt["labels"][
                 user_prompt_len:
-            ]  # could be sped up, probably
+            ]
+
         return tokenized_full_prompt
 
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=use_gradient_checkpointing)

@@ -40,10 +40,10 @@ python fira/fine_tuning/finetune.py \
   --base_model "$MODEL_PATH" \
   --data_path "$DATA_PATH" \
   --output_dir "$OUTPUT_DIR" \
-  --batch_size 64 \
-  --micro_batch_size 8 \
+  --batch_size 16 \
+  --micro_batch_size 4 \
   --num_epochs 3 \
-  --learning_rate 0.01 \
+  --learning_rate 1.0e-4 \
   --cutoff_len 1024 \
   --val_set_size 1000 \
   --adapter_name lora \
