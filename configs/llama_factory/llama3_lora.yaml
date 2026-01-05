@@ -1,41 +1,42 @@
-### 模型配置
 model_name_or_path: models/LLM-Research/Meta-Llama-3-8B-Instruct
 
-### 方法配置 
+### 方法配置
 stage: sft
 do_train: true
 finetuning_type: lora
 lora_target: all
-lora_rank: 16
-lora_alpha: 16       
-lora_dropout: 0.0   
+lora_rank: 32
+lora_alpha: 64
+lora_dropout: 0.05
 
 ### 数据配置
-dataset: meta_math  
+dataset: meta_math 
 template: llama3
 cutoff_len: 1024
-max_samples: 10000 
+max_samples: 10000
 overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### 输出配置
-output_dir: outputs/lora_pissa
+output_dir: outputs/lora
 logging_steps: 1
 save_steps: 10000
 plot_loss: true
 overwrite_output_dir: true
 report_to: none
 
-### 训练参数
+### 训练参数 
 per_device_train_batch_size: 16
-gradient_accumulation_steps: 4
-learning_rate: 2.0e-5 
-num_train_epochs: 3.0 
+gradient_accumulation_steps: 1
+learning_rate: 1.0e-4
+num_train_epochs: 3.0
 lr_scheduler_type: cosine
-warmup_ratio: 0.03   
+warmup_ratio: 0.1
 bf16: true
 flash_attn: sdpa
-val_size: 0.05
+
+### 验证配置
+val_size: 0.1
 per_device_eval_batch_size: 16
 eval_strategy: steps
 eval_steps: 50

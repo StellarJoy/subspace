@@ -1,24 +1,16 @@
 ### 模型配置
-# [保持不变]
 model_name_or_path: models/LLM-Research/Meta-Llama-3-8B-Instruct
 
 ### 方法配置
 stage: sft
 do_train: true
 finetuning_type: lora
-# [修改1] Target Modules 对齐论文
-# Fira 论文明确指出作用于 Q, K, V, Up, Down 五个模块。
-# 虽然 'all' 也可以，但为了严格对照，建议精确指定。
 lora_target: all
-# [修改2] Rank 从 8 改为 32 (Fira 论文标准设置)
 lora_rank: 32
-# [修改3] Alpha 从 16 改为 64 (通常 Alpha = 2 * Rank)
 lora_alpha: 64
-# [修改4] Dropout 从 0.1 改为 0.05 (Fira 论文设置)
 lora_dropout: 0.05
 
 ### 数据配置
-# [保持不变]
 dataset: meta_math 
 template: llama3
 cutoff_len: 1024
@@ -27,7 +19,6 @@ overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### 输出配置
-# [修改5] 更新输出路径名以反映 Rank 32
 output_dir: outputs/lora_fira
 
 logging_steps: 1
@@ -36,12 +27,10 @@ plot_loss: true
 overwrite_output_dir: true
 report_to: none
 
-### 训练参数 (H800 加速版)
+### 训练参数 
 per_device_train_batch_size: 16
 gradient_accumulation_steps: 1
-# [修改6] LR 从 2e-4 改为 1e-4 (Fira 论文微调标准 LR)
 learning_rate: 1.0e-4
-# [修改7] Epochs 从 5.0 改为 3.0 (Fira 论文设置)
 num_train_epochs: 3.0
 lr_scheduler_type: cosine
 warmup_ratio: 0.1

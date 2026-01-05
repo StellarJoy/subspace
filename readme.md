@@ -72,9 +72,9 @@ pip install -e "./stella"
 
 所有训练脚本均已配置了**自动根目录定位**，你可以在任何路径下运行它们。
 
-### 1. 准备数据
+### 1. 准备数据与模型
 
-将你的数据放入 `data/` 目录，并在 `data/dataset_info.json` 中注册。
+将你的数据放入 `data/` 目录，并在 `data/dataset_info.json` 中注册,将模型放入'models/'目录
 
 ### 2. 启动训练
 

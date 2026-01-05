@@ -1,6 +1,4 @@
 ### 模型配置
-# [修改1] 这里的路径改为相对于 subspace 根目录的路径
-# 原来的绝对路径 /root/autodl-tmp/... 换了机器就失效了
 model_name_or_path: models/LLM-Research/Meta-Llama-3-8B-Instruct
 
 ### 方法配置
@@ -8,15 +6,14 @@ stage: sft
 do_train: true
 finetuning_type: lora
 lora_target: all
-lora_rank: 16                # <--- [修改] 统一实验标准为 16
-lora_alpha: 16               # <--- [修改] PiSSA 推荐 alpha=rank (缩放为1)
+lora_rank: 16               
+lora_alpha: 16            
 lora_dropout: 0
-pissa_init: true             # <--- [核心] 开启 PiSSA SVD 初始化
-pissa_iter: 16               # <--- [保留] 快速 SVD
-pissa_convert: true          # <--- [保留] 转换模型权重
+pissa_init: true             
+pissa_iter: 16               
+pissa_convert: true          
 
 ### 数据配置
-# [注意] 请确保 subspace/data/dataset_info.json 里注册了 commonsense_170k
 dataset: meta_math
 template: llama3
 cutoff_len: 1024
@@ -25,17 +22,14 @@ overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### 输出配置
-# [修改2] 将输出路径统一指向 outputs 文件夹
-# 这里的 saves/ 改为了 outputs/，并且层级更清晰
 output_dir: outputs/pissa
-
 logging_steps: 1
 save_steps: 10000
 plot_loss: true
 overwrite_output_dir: true
 report_to: none
 
-### 训练参数 (H800 加速版)
+### 训练参数
 per_device_train_batch_size: 16
 gradient_accumulation_steps: 4
 learning_rate: 2.0e-5
