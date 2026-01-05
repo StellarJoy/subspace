@@ -6,8 +6,10 @@ result/
 saves/
 # 忽略数据
 data/commonsense170k/
+data/MetaMathQA/
 dataset/
 models/
+eval_results/
 # 忽略 Python 缓存
 __pycache__/
 *.pyc

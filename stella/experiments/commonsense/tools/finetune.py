@@ -66,7 +66,7 @@ def train(
     target_modules: list[str] = None,
     merge: bool = False,
     # llm hyperparams
-    train_on_inputs: bool = True,  # if False, masks out inputs in loss
+    train_on_inputs: bool = False,  # if False, masks out inputs in loss
     group_by_length: bool = False,  # faster, but produces an odd training loss curve
     resume_from_checkpoint: str = None,  # either training checkpoint or final adapter
 ):
@@ -333,26 +333,44 @@ def train(
 
 
 def generate_prompt(data_point):
-    if data_point['input']:
+    # === 1. 数据格式适配区域 ===
+    # 情况 A: MetaMathQA 格式 (query, response)
+    if 'query' in data_point and 'response' in data_point:
+        instruction = data_point['query']
+        input_text = ""  # 数学题通常没有额外的 input 上下文
+        output = data_point['response']
+    
+    # 情况 B: 标准 Alpaca 格式 (instruction, input, output)
+    else:
+        # 使用 .get() 防止报错，如果没有则给空字符串
+        instruction = data_point.get('instruction', '')
+        input_text = data_point.get('input', '')
+        output = data_point.get('output', '')
+
+    # === 2. 构造 Prompt 模板 ===
+    # Llama 3 官方通常建议用特殊的 Chat 模板，但这里为了兼容代码，
+    # 我们继续使用 Alpaca 风格的 Prompt，效果也是很好的。
+    
+    if input_text:
         return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
-{data_point["instruction"]}
+{instruction}
 
 ### Input:
-{data_point["input"]}
+{input_text}
 
 ### Response:
-{data_point["output"]}
+{output}
 """
     else:
         return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
 
 ### Instruction:
-{data_point["instruction"]}
+{instruction}
 
 ### Response:
-{data_point["output"]}
+{output}
 """
 
 

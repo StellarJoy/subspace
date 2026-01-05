@@ -3,7 +3,7 @@
     "file_name": "identity.json"
   },
   "commonsense_170k": {
-    "file_name": "/root/autodl-tmp/subspace/data/commonsense170k/train.json",
+    "file_name": "commonsense170k/train_shuffled.json",
     "columns": {
       "prompt": "instruction",
       "query": "input",
@@ -746,5 +746,12 @@
       "prompt": "content"
     },
     "folder": "python"
+  },
+  "meta_math": {
+    "file_name": "MetaMathQA/train.json",
+    "columns": {
+      "prompt": "query",
+      "response": "response"
+    }
   }
 }

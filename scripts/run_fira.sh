@@ -22,7 +22,7 @@ echo "📍 当前工作目录: $(pwd)"
 MODEL_PATH="/root/autodl-tmp/subspace/models/LLM-Research/Meta-Llama-3-8B-Instruct"
 
 # 数据路径 (修改为指向我们新建的 data 目录)
-DATA_PATH="$PROJECT_ROOT/data/commonsense170k/train.json"
+DATA_PATH="$PROJECT_ROOT/data/MetaMathQA/train.json"
 
 # 输出路径 (统一放入 outputs 文件夹，方便管理)
 OUTPUT_DIR="$PROJECT_ROOT/outputs/fira"
@@ -36,19 +36,19 @@ echo "📂 数据路径: $DATA_PATH"
 echo "💾 输出路径: $OUTPUT_DIR"
 
 # 注意：这里的 python 脚本路径是相对于 subspace/ 的
-python Fira/fine_tuning/finetune.py \
+python fira/fine_tuning/finetune.py \
   --base_model "$MODEL_PATH" \
   --data_path "$DATA_PATH" \
   --output_dir "$OUTPUT_DIR" \
   --batch_size 64 \
   --micro_batch_size 8 \
   --num_epochs 3 \
-  --learning_rate 2e-4 \
+  --learning_rate 0.01 \
   --cutoff_len 1024 \
   --val_set_size 1000 \
   --adapter_name lora \
-  --lora_r 16 \
-  --lora_alpha 32 \
+  --lora_r 32 \
+  --lora_alpha 64 \
   --target_modules '["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]' \
   --save_step 1000 \
   --eval_step 50 \

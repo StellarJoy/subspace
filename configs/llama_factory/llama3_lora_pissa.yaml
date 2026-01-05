@@ -1,0 +1,43 @@
+### 模型配置
+model_name_or_path: models/LLM-Research/Meta-Llama-3-8B-Instruct
+
+### 方法配置 (LoRA Baseline)
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 16       # 保持 alpha = rank
+lora_dropout: 0.0    # [修改] 论文中设置为 0
+# pissa_init: false  # 默认就是 false，不写也行，或者显式关掉
+# pissa_convert: false
+
+### 数据配置 (保持一致)
+dataset: meta_math   # 或者你的 commonsense_170k
+template: llama3
+cutoff_len: 1024
+max_samples: 10000   # 1万条数据足够看收敛趋势了
+overwrite_cache: true
+preprocessing_num_workers: 16
+
+### 输出配置
+output_dir: outputs/lora_pissa # [注意] 区分路径
+
+### 训练参数
+logging_steps: 1
+save_steps: 10000
+plot_loss: true
+overwrite_output_dir: true
+report_to: none
+per_device_train_batch_size: 16
+gradient_accumulation_steps: 4
+learning_rate: 2.0e-5 # [注意] 论文中微调 7B 模型用的学习率是 2e-5，你原来的 2e-4 可能偏大，容易震荡
+num_train_epochs: 3.0 # 1-3个epoch足够
+lr_scheduler_type: cosine
+warmup_ratio: 0.03    # 论文中是 0.03
+bf16: true
+flash_attn: sdpa
+val_size: 0.05
+per_device_eval_batch_size: 16
+eval_strategy: steps
+eval_steps: 50

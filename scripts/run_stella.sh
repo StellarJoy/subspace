@@ -22,7 +22,7 @@ echo "📍 当前工作目录: $(pwd)"
 # [路径设置] - 全部修改为基于 $PROJECT_ROOT 的相对路径
 # 这样即使你把 subspace 文件夹移动到任何地方，或者换了电脑，都能跑
 MODEL_PATH="$PROJECT_ROOT/models/LLM-Research/Meta-Llama-3-8B-Instruct"
-DATA_PATH="$PROJECT_ROOT/data/commonsense170k/train.json"
+DATA_PATH="$PROJECT_ROOT/data/MetaMathQA/train.json"
 OUTPUT_DIR="$PROJECT_ROOT/outputs/stella"
 
 # [环境设置]
@@ -47,15 +47,15 @@ python stella/experiments/commonsense/tools/finetune.py \
   --batch_size 64 \
   --micro_batch_size 4 \
   --num_epochs 3 \
-  --learning_rate 2e-4 \
+  --learning_rate 5e-4 \
   --cutoff_len 1024 \
   --val_set_size 1000 \
   --eval_step 50 \
   --save_step 1000 \
   --adapter_name Stella \
   --target_modules '["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]' \
-  --lora_r 16 \
-  --lora_alpha 32 \
+  --lora_r 32 \
+  --lora_alpha 64 \
   --stella_init rando \
   --stella_retraction polar \
   --stella_diag_s True \

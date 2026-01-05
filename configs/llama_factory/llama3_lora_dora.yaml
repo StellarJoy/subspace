@@ -8,7 +8,6 @@ stage: sft
 do_train: true
 finetuning_type: lora
 lora_target: all
-use_dora: true
 lora_rank: 64
 lora_alpha: 128
 lora_dropout: 0.1
@@ -25,7 +24,7 @@ preprocessing_num_workers: 16
 ### 输出配置
 # [修改2] 将输出路径统一指向 outputs 文件夹
 # 这里的 saves/ 改为了 outputs/，并且层级更清晰
-output_dir: outputs/dora
+output_dir: outputs/lora_dora
 
 logging_steps: 1
 save_steps: 10000
@@ -36,7 +35,7 @@ report_to: none
 ### 训练参数 (H800 加速版)
 per_device_train_batch_size: 16
 gradient_accumulation_steps: 4
-learning_rate: 1.0e-4
+learning_rate: 2.0e-4
 num_train_epochs: 3.0
 lr_scheduler_type: cosine
 warmup_ratio: 0.03

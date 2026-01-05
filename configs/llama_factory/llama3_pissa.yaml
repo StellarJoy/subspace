@@ -10,14 +10,14 @@ finetuning_type: lora
 lora_target: all
 lora_rank: 16                # <--- [修改] 统一实验标准为 16
 lora_alpha: 16               # <--- [修改] PiSSA 推荐 alpha=rank (缩放为1)
-lora_dropout: 0.1
+lora_dropout: 0
 pissa_init: true             # <--- [核心] 开启 PiSSA SVD 初始化
 pissa_iter: 16               # <--- [保留] 快速 SVD
 pissa_convert: true          # <--- [保留] 转换模型权重
 
 ### 数据配置
 # [注意] 请确保 subspace/data/dataset_info.json 里注册了 commonsense_170k
-dataset: commonsense_170k
+dataset: meta_math
 template: llama3
 cutoff_len: 1024
 max_samples: 10000
@@ -27,7 +27,7 @@ preprocessing_num_workers: 16
 ### 输出配置
 # [修改2] 将输出路径统一指向 outputs 文件夹
 # 这里的 saves/ 改为了 outputs/，并且层级更清晰
-output_dir: outputs/llama3-8b-pissa-sft
+output_dir: outputs/pissa
 
 logging_steps: 1
 save_steps: 10000
@@ -38,15 +38,15 @@ report_to: none
 ### 训练参数 (H800 加速版)
 per_device_train_batch_size: 16
 gradient_accumulation_steps: 4
-learning_rate: 2.0e-4
-num_train_epochs: 5.0
+learning_rate: 2.0e-5
+num_train_epochs: 3
 lr_scheduler_type: cosine
-warmup_ratio: 0.1
+warmup_ratio: 0.03
 bf16: true
 flash_attn: sdpa
 
 ### 验证配置
-val_size: 0.1
+val_size: 0.05
 per_device_eval_batch_size: 16
 eval_strategy: steps
 eval_steps: 50

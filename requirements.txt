@@ -5,7 +5,7 @@
 
 # 2. 评估工具 (lm-evaluation-harness)
 # 之前在 batch_eval.py 里用到了它
--e ./LLaMA-Factory/lm-evaluation-harness
+-e ./lm-evaluation-harness
 
 # 3. 扩展模块 (Stella)
 # 这是你特有的依赖。因为它本身依赖 transformers，
